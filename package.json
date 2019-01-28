@@ -1,0 +1,27 @@
+{
+  "name": "2048-ioc-typescript",
+  "version": "0.0.1",
+  "description": "2048 canvas game, use ioc model",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saber2pr/2048-ioc-typescript.git"
+  },
+  "author": "saber2pr",
+  "license": "ISC",
+  "scripts": {
+    "start": "tsc --watch",
+    "dev": "rollup -c --watch"
+  },
+  "devDependencies": {
+    "typescript": "^3.2.1",
+    "rollup": "^1.1.2",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-node-resolve": "^4.0.0"
+  },
+  "dependencies": {
+    "popmotion": "^8.6.1",
+    "saber-canvas": "^1.0.9",
+    "saber-ioc": "^0.2.1",
+    "saber-observable": "^1.0.4"
+  }
+}
