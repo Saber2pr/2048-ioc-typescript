@@ -1,8 +1,3 @@
-var process = {
-  env: {
-    NODE_ENV: 'production'
-  }
-};
 var module = {};
 var test = (function () {
 	'use strict';

@@ -1,12 +1,7 @@
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 
-const Global = `var process = {
-  env: {
-    NODE_ENV: 'production'
-  }
-};
-var module = {};`
+const Global = `var module = {};`
 
 export default {
   input: './lib/main.js',

@@ -1,4 +1,4 @@
-import ITouchFront from '../interface/ITouchFront';
+import { ITouchFront } from '../interface/ITouchFront';
 export declare class TouchFront implements ITouchFront {
     private offset;
     private delta;

@@ -1,4 +1,4 @@
-import ITouchFront from '../interface/ITouchFront'
+import { ITouchFront } from '../interface/ITouchFront'
 import { Injectable } from 'saber-ioc'
 interface Point {
   x: number
