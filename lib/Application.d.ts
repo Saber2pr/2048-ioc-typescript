@@ -1,6 +1,6 @@
 import { ILayout } from './interface/ILayout';
 import { IMatrix } from './interface/IMatrix';
-import ITouchFront from './interface/ITouchFront';
+import { ITouchFront } from './interface/ITouchFront';
 export declare class Application {
     private Layout;
     private Matrix;
