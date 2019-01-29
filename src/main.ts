@@ -2,15 +2,17 @@ import { Application } from './Application'
 import { SaFactory } from 'saber-ioc'
 import { Layout } from './injectable/Layout'
 import { Factory } from './injectable/Factory'
-import Data from './singletons/Data'
-import TouchFront from './injectable/TouchFront'
+import { Matrix } from './singletons/Matrix'
+import { TouchFront } from './injectable/TouchFront'
 import { Canvas } from './singletons/Canvas'
+import { Block } from './injectable/Block'
 
 new SaFactory.Container(
   Layout,
   Factory,
   Application,
-  Data,
+  Matrix,
   TouchFront,
-  Canvas
+  Canvas,
+  Block
 ).run()

@@ -1,5 +1,5 @@
-import { IMatrix } from '../interface/IData';
-export default class Matrix implements IMatrix {
+import { IMatrix } from '../interface/IMatrix';
+export declare class Matrix implements IMatrix {
     private constructor();
     static instance: Matrix;
     static getInstance(): Matrix;

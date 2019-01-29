@@ -1,25 +1,25 @@
 import { ILayout } from './interface/ILayout'
 import { Bootstrap, Inject } from 'saber-ioc'
-import { IData } from './interface/IData'
+import { IMatrix } from './interface/IMatrix'
 import ITouchFront from './interface/ITouchFront'
 
 @Bootstrap
 export class Application {
   constructor(
     @Inject('Layout') private Layout: ILayout,
-    @Inject('Data') private Data: IData,
+    @Inject('Matrix') private Matrix: IMatrix,
     @Inject('TouchFront') private TouchFront: ITouchFront
   ) {}
   main() {
-    this.Data.init(4, 2048).addRand(2)
-    this.Layout.draw(this.Data.merge('left'), 'left')
+    this.Matrix.init(4).addRand(2)
+    this.Layout.draw(this.Matrix.merge('left'))
     this.TouchFront.subscribe(
-      () => this.Layout.draw(this.Data.merge('left'), 'left'),
-      () => this.Layout.draw(this.Data.merge('right'), 'right'),
-      () => this.Layout.draw(this.Data.merge('up'), 'up'),
-      () => this.Layout.draw(this.Data.merge('down'), 'down')
+      () => this.Layout.draw(this.Matrix.merge('left')),
+      () => this.Layout.draw(this.Matrix.merge('right')),
+      () => this.Layout.draw(this.Matrix.merge('up')),
+      () => this.Layout.draw(this.Matrix.merge('down'))
     )
-      .onStop(() => this.Data.addRand(2))
+      .onStop(() => this.Matrix.addRand(2))
       .listen()
   }
 }
