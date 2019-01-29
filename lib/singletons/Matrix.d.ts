@@ -1,4 +1,4 @@
-import { IMatrix } from '../interface/IMatrix';
+import { IMatrix } from '../interface/ISMatrix';
 export declare class Matrix implements IMatrix {
     private constructor();
     static instance: Matrix;

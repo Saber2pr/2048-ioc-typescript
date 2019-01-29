@@ -1,9 +1,9 @@
-import { Injectable, SingletonLazy } from 'saber-ioc'
+import { Injectable, Singleton } from 'saber-ioc'
 import { MatFill, MatSet, Mat_foreach, MatTransform } from 'saber-mat'
 import { call } from 'saber-interval'
-import { IMatrix } from '../interface/IMatrix'
+import { IMatrix } from '../interface/ISMatrix'
 
-@SingletonLazy
+@Singleton
 @Injectable()
 export class Matrix implements IMatrix {
   private constructor() {}

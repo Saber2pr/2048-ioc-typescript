@@ -1148,8 +1148,8 @@ var test = (function () {
 	/*
 	 * @Author: AK-12
 	 * @Date: 2019-01-24 07:11:58
-	 * @Last Modified by: AK-12
-	 * @Last Modified time: 2019-01-27 22:10:41
+	 * @Last Modified by: saber2pr
+	 * @Last Modified time: 2019-01-29 18:44:39
 	 */
 
 	/**
@@ -1171,8 +1171,7 @@ var test = (function () {
 	 * # CLASSTYPE
 	 */
 	var CLASSTYPE = {
-	    SINGLETON: 'saber_singleton',
-	    SINGLETON_LAZY: 'saber_singleton_lazy'
+	    STATIC: 'saber_singleton'
 	};
 	/**
 	 * # MetaKey
@@ -1193,7 +1192,7 @@ var test = (function () {
 	            throw new Error("id:[" + id + "] is existed!");
 	        }
 	        else {
-	            Reflect.defineMetadata(MetaKey(id || target.name), target, MetaStore);
+	            Reflect.defineMetadata(MetaKey(id || Reflect.get(target, 'name')), target, MetaStore);
 	        }
 	    };
 	}
@@ -1227,38 +1226,31 @@ var test = (function () {
 	 * ## Singleton
 	 * `tag`:`Singleton`
 	 *
-	 * `provide`:`instance`
-	 *
 	 * @export
 	 * @param {*} target
 	 */
 	function Singleton(target) {
-	    Reflect.defineMetadata(CLASSTYPE.SINGLETON, undefined, target);
+	    Reflect.defineMetadata(CLASSTYPE.STATIC, undefined, target);
 	}
 	exports.Singleton = Singleton;
 	/**
-	 * ## SingletonLazy
-	 * `tag`:`SingletonLazy`
-	 *
-	 * `provide`:`getInstance()`
+	 * ## Static
+	 * `tag`:`Static`
 	 *
 	 * @export
 	 * @param {*} target
 	 */
-	function SingletonLazy(target) {
-	    Reflect.defineMetadata(CLASSTYPE.SINGLETON_LAZY, undefined, target);
+	function Static(target) {
+	    Reflect.defineMetadata(CLASSTYPE.STATIC, undefined, target);
 	}
-	exports.SingletonLazy = SingletonLazy;
+	exports.Static = Static;
 	/**
 	 * # Class
 	 */
 	var Class;
 	(function (Class) {
 	    Class.isSingleton = function (target) {
-	        return Reflect.hasMetadata(CLASSTYPE.SINGLETON, target);
-	    };
-	    Class.isSingletonLazy = function (target) {
-	        return Reflect.hasMetadata(CLASSTYPE.SINGLETON_LAZY, target);
+	        return Reflect.hasMetadata(CLASSTYPE.STATIC, target);
 	    };
 	})(Class || (Class = {}));
 	/**
@@ -1279,23 +1271,17 @@ var test = (function () {
 	     */
 	    function create(constructor) {
 	        if (Class.isSingleton(constructor)) {
-	            if (constructor.instance) {
-	                return constructor.instance;
-	            }
-	            else {
-	                throw new Error('constructor should provide `instance`.');
-	            }
-	        }
-	        else if (Class.isSingletonLazy(constructor)) {
-	            if (constructor.getInstance) {
-	                return constructor.getInstance();
-	            }
-	            else {
-	                throw new Error('constructor should provide `getInstance`.');
-	            }
+	            return constructor;
 	        }
 	        var depKeys = Reflect.getMetadataKeys(constructor).filter(function (key) { return key.indexOf(META) !== -1; });
-	        var dependencies = depKeys.map(function (key) { return Reflect.getMetadata(key, MetaStore); });
+	        var dependencies = depKeys.map(function (key) {
+	            if (Reflect.hasMetadata(key, MetaStore)) {
+	                return Reflect.getMetadata(key, MetaStore);
+	            }
+	            else {
+	                throw new Error("cannot found " + key.replace(META, 'dependence') + " in container.");
+	            }
+	        });
 	        var depInstances = dependencies.map(function (dependence) { return create(dependence); });
 	        return new (constructor.bind.apply(constructor, [void 0].concat(depInstances.reverse())))();
 	    }
@@ -1356,7 +1342,7 @@ var test = (function () {
 	var saberIoc_2 = saberIoc.Inject;
 	var saberIoc_3 = saberIoc.Bootstrap;
 	var saberIoc_4 = saberIoc.Singleton;
-	var saberIoc_5 = saberIoc.SingletonLazy;
+	var saberIoc_5 = saberIoc.Static;
 	var saberIoc_6 = saberIoc.SaFactory;
 
 	var lib = createCommonjsModule(function (module, exports) {
@@ -1392,10 +1378,12 @@ var test = (function () {
 	    }
 	    Application.prototype.main = function () {
 	        var _this = this;
-	        this.Matrix.init(4).addRand(2);
-	        this.Layout.draw(this.Matrix.merge('left'));
-	        this.TouchFront.subscribe(function () { return _this.Layout.draw(_this.Matrix.merge('left')); }, function () { return _this.Layout.draw(_this.Matrix.merge('right')); }, function () { return _this.Layout.draw(_this.Matrix.merge('up')); }, function () { return _this.Layout.draw(_this.Matrix.merge('down')); })
-	            .onStop(function () { return _this.Matrix.addRand(2); })
+	        this.Matrix.getInstance()
+	            .init(4)
+	            .addRand(2);
+	        this.Layout.draw(this.Matrix.getInstance().merge('left'));
+	        this.TouchFront.subscribe(function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('left')); }, function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('right')); }, function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('up')); }, function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('down')); })
+	            .onStop(function () { return _this.Matrix.getInstance().addRand(2); })
 	            .listen();
 	    };
 	    Application = __decorate([
@@ -1412,6 +1400,224 @@ var test = (function () {
 
 	unwrapExports(Application_1);
 	var Application_2 = Application_1.Application;
+
+	var Mat_1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	/*
+	 * @Author: AK-12
+	 * @Date: 2018-12-29 18:41:28
+	 * @Last Modified by: AK-12
+	 * @Last Modified time: 2019-01-06 22:38:26
+	 */
+	/**
+	 * MatTransform
+	 * @param mat
+	 */
+	exports.MatTransform = function (mat) {
+	    return mat[0].map(function (col, i) { return mat.map(function (row) { return row[i]; }); });
+	};
+	/**
+	 * MatFill
+	 * @param value
+	 * @param x
+	 * @param y
+	 */
+	exports.MatFill = function (value, x, y) {
+	    if (y === void 0) { y = x; }
+	    return Array(y)
+	        .fill(0)
+	        .map(function () { return Array(x).fill(value); });
+	};
+	/**
+	 * MatClone
+	 * @param mat
+	 */
+	exports.MatClone = function (mat) { return mat.map(function (raw) { return raw.slice(); }); };
+	/**
+	 * MatFlat
+	 * @param mat
+	 */
+	exports.MatFlat = function (mat) {
+	    return Array.prototype.concat.apply([], mat);
+	};
+	/**
+	 * visitMat
+	 * @param mat
+	 * @param callback
+	 */
+	exports.Mat_foreach = function (mat, callback) {
+	    return mat.forEach(function (raws, index_r) {
+	        return raws.forEach(function (col, index_c) { return callback(col, index_r, index_c); });
+	    });
+	};
+	/**
+	 * MatSet
+	 * @param mat
+	 * @param value
+	 * @param raw
+	 * @param col
+	 */
+	exports.MatSet = function (mat, value, vec) {
+	    mat[vec.raw][vec.col] = value;
+	    return mat;
+	};
+	/**
+	 * @export
+	 * @class Mat
+	 * @template T
+	 */
+	var Mat = /** @class */ (function () {
+	    function Mat(value, cols, rows) {
+	        if (Array.isArray(value)) {
+	            this.state = exports.MatClone(value);
+	            return this;
+	        }
+	        else if (typeof cols === 'number') {
+	            this.state = exports.MatFill(value, cols, cols);
+	            return this;
+	        }
+	        this.state = exports.MatFill(value, cols, rows);
+	        return this;
+	    }
+	    Object.defineProperty(Mat.prototype, "raws", {
+	        /**
+	         * raws
+	         *
+	         * @readonly
+	         * @type {number}
+	         * @memberof Mat
+	         */
+	        get: function () {
+	            return this.state.length;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(Mat.prototype, "cols", {
+	        /**
+	         * cols
+	         *
+	         * @readonly
+	         * @type {number}
+	         * @memberof Mat
+	         */
+	        get: function () {
+	            return this.state[0].length;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Mat.prototype.at = function (raw, col) {
+	        if (typeof col !== 'undefined') {
+	            return this.state[raw][col];
+	        }
+	        return this.state[raw][raw];
+	    };
+	    /**
+	     * @param {T} value
+	     * @param {{ raw: number col: number }} vec
+	     * @memberof Mat
+	     */
+	    Mat.prototype.set = function (value, vec) {
+	        this.state = exports.MatSet(this.state, value, vec);
+	        return this;
+	    };
+	    /**
+	     * @param {(value: T, raw: number, col: number) => void} callback
+	     * @returns
+	     * @memberof Mat
+	     */
+	    Mat.prototype.each = function (callback) {
+	        exports.Mat_foreach(this.state, callback);
+	        return this;
+	    };
+	    /**
+	     * @memberof Mat
+	     */
+	    Mat.prototype.transform = function () {
+	        this.state = exports.MatTransform(this.state);
+	        return this;
+	    };
+	    /**
+	     * @returns {T[][]}
+	     * @memberof Mat
+	     */
+	    Mat.prototype.clone = function () {
+	        return exports.MatClone(this.state);
+	    };
+	    return Mat;
+	}());
+	exports.Mat = Mat;
+	});
+
+	unwrapExports(Mat_1);
+	var Mat_2 = Mat_1.MatTransform;
+	var Mat_3 = Mat_1.MatFill;
+	var Mat_4 = Mat_1.MatClone;
+	var Mat_5 = Mat_1.MatFlat;
+	var Mat_6 = Mat_1.Mat_foreach;
+	var Mat_7 = Mat_1.MatSet;
+	var Mat_8 = Mat_1.Mat;
+
+	var lib$1 = createCommonjsModule(function (module, exports) {
+	function __export(m) {
+	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__export(Mat_1);
+	});
+
+	unwrapExports(lib$1);
+
+	var Layout_1 = createCommonjsModule(function (module, exports) {
+	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
+	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	    return c > 3 && r && Object.defineProperty(target, key, r), r;
+	};
+	var __metadata = (commonjsGlobal && commonjsGlobal.__metadata) || function (k, v) {
+	    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+	};
+	var __param = (commonjsGlobal && commonjsGlobal.__param) || function (paramIndex, decorator) {
+	    return function (target, key) { decorator(target, key, paramIndex); }
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+
+	var Layout = /** @class */ (function () {
+	    function Layout(Factory, Canvas) {
+	        this.Factory = Factory;
+	        this.Canvas = Canvas;
+	        this.edge = {
+	            dx: 100,
+	            dy: 100
+	        };
+	    }
+	    Layout.prototype.draw = function (mat) {
+	        var _this = this;
+	        this.Canvas.instance.clear();
+	        lib$1.Mat_foreach(mat, function (value, raw, col) {
+	            return value
+	                ? _this.Canvas.instance
+	                    .draw(_this.Factory.getNode().setPosition(col * _this.edge.dx, raw * _this.edge.dy))
+	                    .draw(_this.Factory.getLabel(value).setPosition(col * _this.edge.dx, raw * _this.edge.dy))
+	                : null;
+	        });
+	    };
+	    Layout = __decorate([
+	        lib.Injectable(),
+	        __param(0, lib.Inject('Factory')),
+	        __param(1, lib.Inject('Canvas')),
+	        __metadata("design:paramtypes", [Object, Object])
+	    ], Layout);
+	    return Layout;
+	}());
+	exports.Layout = Layout;
+	});
+
+	unwrapExports(Layout_1);
+	var Layout_2 = Layout_1.Layout;
 
 	var saberCanvas = createCommonjsModule(function (module, exports) {
 	Object.defineProperty(exports, "__esModule", { value: true });
@@ -1760,7 +1966,7 @@ var test = (function () {
 	var Rect_4 = Rect_1.Label;
 	var Rect_5 = Rect_1.Sprite;
 
-	var lib$1 = createCommonjsModule(function (module, exports) {
+	var lib$2 = createCommonjsModule(function (module, exports) {
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
@@ -1769,271 +1975,7 @@ var test = (function () {
 	__export(Rect_1);
 	});
 
-	unwrapExports(lib$1);
-
-	var Canvas_1 = createCommonjsModule(function (module, exports) {
-	var __extends = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
-	    var extendStatics = function (d, b) {
-	        extendStatics = Object.setPrototypeOf ||
-	            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	        return extendStatics(d, b);
-	    };
-	    return function (d, b) {
-	        extendStatics(d, b);
-	        function __() { this.constructor = d; }
-	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	    };
-	})();
-	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
-	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-	    return c > 3 && r && Object.defineProperty(target, key, r), r;
-	};
-	var __metadata = (commonjsGlobal && commonjsGlobal.__metadata) || function (k, v) {
-	    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-	};
-	Object.defineProperty(exports, "__esModule", { value: true });
-
-
-	var Canvas = /** @class */ (function (_super) {
-	    __extends(Canvas, _super);
-	    function Canvas() {
-	        return _super.call(this, 'canvas', 400, 400) || this;
-	    }
-	    Canvas_1 = Canvas;
-	    var Canvas_1;
-	    Canvas.instance = new Canvas_1();
-	    Canvas = Canvas_1 = __decorate([
-	        lib.Singleton,
-	        lib.Injectable(),
-	        __metadata("design:paramtypes", [])
-	    ], Canvas);
-	    return Canvas;
-	}(lib$1.Canvas));
-	exports.Canvas = Canvas;
-	});
-
-	unwrapExports(Canvas_1);
-	var Canvas_2 = Canvas_1.Canvas;
-
-	var Mat_1 = createCommonjsModule(function (module, exports) {
-	Object.defineProperty(exports, "__esModule", { value: true });
-	/*
-	 * @Author: AK-12
-	 * @Date: 2018-12-29 18:41:28
-	 * @Last Modified by: AK-12
-	 * @Last Modified time: 2019-01-06 22:38:26
-	 */
-	/**
-	 * MatTransform
-	 * @param mat
-	 */
-	exports.MatTransform = function (mat) {
-	    return mat[0].map(function (col, i) { return mat.map(function (row) { return row[i]; }); });
-	};
-	/**
-	 * MatFill
-	 * @param value
-	 * @param x
-	 * @param y
-	 */
-	exports.MatFill = function (value, x, y) {
-	    if (y === void 0) { y = x; }
-	    return Array(y)
-	        .fill(0)
-	        .map(function () { return Array(x).fill(value); });
-	};
-	/**
-	 * MatClone
-	 * @param mat
-	 */
-	exports.MatClone = function (mat) { return mat.map(function (raw) { return raw.slice(); }); };
-	/**
-	 * MatFlat
-	 * @param mat
-	 */
-	exports.MatFlat = function (mat) {
-	    return Array.prototype.concat.apply([], mat);
-	};
-	/**
-	 * visitMat
-	 * @param mat
-	 * @param callback
-	 */
-	exports.Mat_foreach = function (mat, callback) {
-	    return mat.forEach(function (raws, index_r) {
-	        return raws.forEach(function (col, index_c) { return callback(col, index_r, index_c); });
-	    });
-	};
-	/**
-	 * MatSet
-	 * @param mat
-	 * @param value
-	 * @param raw
-	 * @param col
-	 */
-	exports.MatSet = function (mat, value, vec) {
-	    mat[vec.raw][vec.col] = value;
-	    return mat;
-	};
-	/**
-	 * @export
-	 * @class Mat
-	 * @template T
-	 */
-	var Mat = /** @class */ (function () {
-	    function Mat(value, cols, rows) {
-	        if (Array.isArray(value)) {
-	            this.state = exports.MatClone(value);
-	            return this;
-	        }
-	        else if (typeof cols === 'number') {
-	            this.state = exports.MatFill(value, cols, cols);
-	            return this;
-	        }
-	        this.state = exports.MatFill(value, cols, rows);
-	        return this;
-	    }
-	    Object.defineProperty(Mat.prototype, "raws", {
-	        /**
-	         * raws
-	         *
-	         * @readonly
-	         * @type {number}
-	         * @memberof Mat
-	         */
-	        get: function () {
-	            return this.state.length;
-	        },
-	        enumerable: true,
-	        configurable: true
-	    });
-	    Object.defineProperty(Mat.prototype, "cols", {
-	        /**
-	         * cols
-	         *
-	         * @readonly
-	         * @type {number}
-	         * @memberof Mat
-	         */
-	        get: function () {
-	            return this.state[0].length;
-	        },
-	        enumerable: true,
-	        configurable: true
-	    });
-	    Mat.prototype.at = function (raw, col) {
-	        if (typeof col !== 'undefined') {
-	            return this.state[raw][col];
-	        }
-	        return this.state[raw][raw];
-	    };
-	    /**
-	     * @param {T} value
-	     * @param {{ raw: number col: number }} vec
-	     * @memberof Mat
-	     */
-	    Mat.prototype.set = function (value, vec) {
-	        this.state = exports.MatSet(this.state, value, vec);
-	        return this;
-	    };
-	    /**
-	     * @param {(value: T, raw: number, col: number) => void} callback
-	     * @returns
-	     * @memberof Mat
-	     */
-	    Mat.prototype.each = function (callback) {
-	        exports.Mat_foreach(this.state, callback);
-	        return this;
-	    };
-	    /**
-	     * @memberof Mat
-	     */
-	    Mat.prototype.transform = function () {
-	        this.state = exports.MatTransform(this.state);
-	        return this;
-	    };
-	    /**
-	     * @returns {T[][]}
-	     * @memberof Mat
-	     */
-	    Mat.prototype.clone = function () {
-	        return exports.MatClone(this.state);
-	    };
-	    return Mat;
-	}());
-	exports.Mat = Mat;
-	});
-
-	unwrapExports(Mat_1);
-	var Mat_2 = Mat_1.MatTransform;
-	var Mat_3 = Mat_1.MatFill;
-	var Mat_4 = Mat_1.MatClone;
-	var Mat_5 = Mat_1.MatFlat;
-	var Mat_6 = Mat_1.Mat_foreach;
-	var Mat_7 = Mat_1.MatSet;
-	var Mat_8 = Mat_1.Mat;
-
-	var lib$2 = createCommonjsModule(function (module, exports) {
-	function __export(m) {
-	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	__export(Mat_1);
-	});
-
 	unwrapExports(lib$2);
-
-	var Layout_1 = createCommonjsModule(function (module, exports) {
-	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
-	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-	    return c > 3 && r && Object.defineProperty(target, key, r), r;
-	};
-	var __metadata = (commonjsGlobal && commonjsGlobal.__metadata) || function (k, v) {
-	    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-	};
-	var __param = (commonjsGlobal && commonjsGlobal.__param) || function (paramIndex, decorator) {
-	    return function (target, key) { decorator(target, key, paramIndex); }
-	};
-	Object.defineProperty(exports, "__esModule", { value: true });
-
-
-
-	var Layout = /** @class */ (function () {
-	    function Layout(Factory, Canvas) {
-	        this.Factory = Factory;
-	        this.Canvas = Canvas;
-	        this.edge = {
-	            dx: 100,
-	            dy: 100
-	        };
-	    }
-	    Layout.prototype.draw = function (mat) {
-	        var _this = this;
-	        this.Canvas.clear();
-	        lib$2.Mat_foreach(mat, function (value, raw, col) {
-	            return value
-	                ? _this.Canvas.draw(_this.Factory.getNode().setPosition(col * _this.edge.dx, raw * _this.edge.dy)).draw(_this.Factory.getLabel(value).setPosition(col * _this.edge.dx, raw * _this.edge.dy))
-	                : null;
-	        });
-	    };
-	    Layout = __decorate([
-	        lib.Injectable(),
-	        __param(0, lib.Inject('Factory')),
-	        __param(1, lib.Inject('Canvas')),
-	        __metadata("design:paramtypes", [Object, Canvas_1.Canvas])
-	    ], Layout);
-	    return Layout;
-	}());
-	exports.Layout = Layout;
-	});
-
-	unwrapExports(Layout_1);
-	var Layout_2 = Layout_1.Layout;
 
 	var Observable_1 = createCommonjsModule(function (module, exports) {
 	var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -2238,10 +2180,10 @@ var test = (function () {
 	        this.Block = Block;
 	    }
 	    Factory.prototype.getNode = function () {
-	        return new lib$1.Node(50, 50);
+	        return new lib$2.Node(50, 50);
 	    };
 	    Factory.prototype.getLabel = function (num) {
-	        return new lib$1.Label(String(num), 30);
+	        return new lib$2.Label(String(num), 30);
 	    };
 	    Factory.prototype.getBlock = function (num, x, y) {
 	        return this.Block.create().set(num, x, y);
@@ -2416,7 +2358,7 @@ var test = (function () {
 	        return this.instance;
 	    };
 	    Matrix.prototype.init = function (size) {
-	        this.mat = lib$2.MatFill(0, size);
+	        this.mat = lib$1.MatFill(0, size);
 	        return this;
 	    };
 	    Matrix.prototype.merge = function (method) {
@@ -2429,10 +2371,10 @@ var test = (function () {
 	                this.mat = this.mat.map(function (raw) { return _this.mergeRight(raw); });
 	                break;
 	            case 'up':
-	                this.mat = lib$2.MatTransform(lib$2.MatTransform(this.mat).map(function (raw) { return _this.mergeLeft(raw); }));
+	                this.mat = lib$1.MatTransform(lib$1.MatTransform(this.mat).map(function (raw) { return _this.mergeLeft(raw); }));
 	                break;
 	            case 'down':
-	                this.mat = lib$2.MatTransform(lib$2.MatTransform(this.mat).map(function (raw) { return _this.mergeRight(raw); }));
+	                this.mat = lib$1.MatTransform(lib$1.MatTransform(this.mat).map(function (raw) { return _this.mergeRight(raw); }));
 	                break;
 	        }
 	        return this.mat;
@@ -2442,7 +2384,7 @@ var test = (function () {
 	        if (times === void 0) { times = 1; }
 	        var points = [];
 	        lib$4.call(function () {
-	            lib$2.Mat_foreach(_this.mat, function (value, raw, col) {
+	            lib$1.Mat_foreach(_this.mat, function (value, raw, col) {
 	                if (value === 0) {
 	                    points.push({ x: raw, y: col });
 	                    _this.hasNext = true;
@@ -2450,7 +2392,7 @@ var test = (function () {
 	            });
 	            if (_this.hasNext) {
 	                var index = parseInt(String(Math.random() * points.length));
-	                lib$2.MatSet(_this.mat, 2, {
+	                lib$1.MatSet(_this.mat, 2, {
 	                    raw: points[index].x,
 	                    col: points[index].y
 	                });
@@ -2460,7 +2402,7 @@ var test = (function () {
 	    };
 	    var Matrix_1;
 	    Matrix = Matrix_1 = __decorate([
-	        lib.SingletonLazy,
+	        lib.Singleton,
 	        lib.Injectable(),
 	        __metadata("design:paramtypes", [])
 	    ], Matrix);
@@ -2565,6 +2507,53 @@ var test = (function () {
 	unwrapExports(TouchFront_1);
 	var TouchFront_2 = TouchFront_1.TouchFront;
 
+	var Canvas_1 = createCommonjsModule(function (module, exports) {
+	var __extends = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+	    var extendStatics = function (d, b) {
+	        extendStatics = Object.setPrototypeOf ||
+	            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+	            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+	        return extendStatics(d, b);
+	    };
+	    return function (d, b) {
+	        extendStatics(d, b);
+	        function __() { this.constructor = d; }
+	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	    };
+	})();
+	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
+	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	    return c > 3 && r && Object.defineProperty(target, key, r), r;
+	};
+	var __metadata = (commonjsGlobal && commonjsGlobal.__metadata) || function (k, v) {
+	    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+
+	var Canvas = /** @class */ (function (_super) {
+	    __extends(Canvas, _super);
+	    function Canvas() {
+	        return _super.call(this, 'canvas', 400, 400) || this;
+	    }
+	    Canvas_1 = Canvas;
+	    var Canvas_1;
+	    Canvas.instance = new Canvas_1();
+	    Canvas = Canvas_1 = __decorate([
+	        lib.Singleton,
+	        lib.Injectable(),
+	        __metadata("design:paramtypes", [])
+	    ], Canvas);
+	    return Canvas;
+	}(lib$2.Canvas));
+	exports.Canvas = Canvas;
+	});
+
+	unwrapExports(Canvas_1);
+	var Canvas_2 = Canvas_1.Canvas;
+
 	var Block_1 = createCommonjsModule(function (module, exports) {
 	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
 	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -2580,8 +2569,8 @@ var test = (function () {
 
 	var Block = /** @class */ (function () {
 	    function Block() {
-	        this.node = new lib$1.Node(0, 0);
-	        this.label = new lib$1.Label('2', 30);
+	        this.node = new lib$2.Node(0, 0);
+	        this.label = new lib$2.Label('2', 30);
 	    }
 	    Block_1 = Block;
 	    Block.prototype.set = function (num, x, y) {
