@@ -1158,7 +1158,7 @@ var test = (function () {
 	 * @Author: saber2pr
 	 * @Date: 2019-01-24 07:11:58
 	 * @Last Modified by: saber2pr
-	 * @Last Modified time: 2019-01-29 21:08:45
+	 * @Last Modified time: 2019-01-30 20:45:30
 	 */
 
 	/**
@@ -1169,7 +1169,13 @@ var test = (function () {
 	/**
 	 * # BASETYPE
 	 */
-	var BASETYPE = ["Number" /* NUMBER */, "String" /* SRTING */, "Boolean" /* BOOLEAN */, "undefined" /* VOID */, "Array" /* ARRAY */];
+	var BASETYPES = [
+	    "Number" /* NUMBER */,
+	    "String" /* SRTING */,
+	    "Boolean" /* BOOLEAN */,
+	    "undefined" /* VOID */,
+	    "Array" /* ARRAY */
+	];
 	/**
 	 * # MetaKey
 	 * return a META key.
@@ -1178,6 +1184,9 @@ var test = (function () {
 	var MetaKey = function (id) { return "saber_meta" /* META */ + ":" + id; };
 	/**
 	 * # Injectable
+	 *
+	 * `Decorator`
+	 *
 	 * register the target to metaStore by id.
 	 * @export
 	 * @param {string} [id]
@@ -1196,6 +1205,9 @@ var test = (function () {
 	exports.Injectable = Injectable;
 	/**
 	 * # Inject
+	 *
+	 * `Decorator`
+	 *
 	 * set a metadata tag needed to target.
 	 * @export
 	 * @param {string} id
@@ -1207,6 +1219,9 @@ var test = (function () {
 	exports.Inject = Inject;
 	/**
 	 * ## Bootstrap
+	 *
+	 * `Decorator`
+	 *
 	 * `tag`:`main class`
 	 *
 	 * `provide`:`main()`
@@ -1221,24 +1236,30 @@ var test = (function () {
 	exports.Bootstrap = Bootstrap;
 	/**
 	 * ## Singleton
+	 *
+	 * `Decorator`
+	 *
 	 * `tag`:`Singleton`
 	 *
 	 * @export
 	 * @param {*} target
 	 */
 	function Singleton(target) {
-	    Reflect.defineMetadata("saber_singleton" /* STATIC */, undefined, target);
+	    Reflect.defineMetadata("saber_static" /* STATIC */, undefined, target);
 	}
 	exports.Singleton = Singleton;
 	/**
 	 * ## Static
+	 *
+	 * `Decorator`
+	 *
 	 * `tag`:`Static`
 	 *
 	 * @export
 	 * @param {*} target
 	 */
 	function Static(target) {
-	    Reflect.defineMetadata("saber_singleton" /* STATIC */, undefined, target);
+	    Reflect.defineMetadata("saber_static" /* STATIC */, undefined, target);
 	}
 	exports.Static = Static;
 	/**
@@ -1247,11 +1268,26 @@ var test = (function () {
 	var Class;
 	(function (Class) {
 	    Class.isStatic = function (target) {
-	        return Reflect.hasMetadata("saber_singleton" /* STATIC */, target);
+	        return Reflect.hasMetadata("saber_static" /* STATIC */, target);
 	    };
 	})(Class || (Class = {}));
 	/**
+	 * TypeCheck
+	 *
+	 * @param {Constructor} constructor$
+	 */
+	function TypeCheck(constructor$) {
+	    if (BASETYPES.some(function (TYPE) { return TYPE === Reflect.get(constructor$, 'name'); })) {
+	        throw new Error("the param of class[" + Reflect.getMetadata("saber_visited" /* VISITED */, MetaStore) + "]'s constructor has invalid type: " + constructor$.name);
+	    }
+	    else {
+	        Reflect.defineMetadata("saber_visited" /* VISITED */, constructor$.name, MetaStore);
+	    }
+	}
+	/**
 	 * ParamCheck
+	 *
+	 * `Decorator`
 	 *
 	 * @param {Constructor} constructor
 	 * @param {string} methodName
@@ -1265,12 +1301,10 @@ var test = (function () {
 	            params[_i] = arguments[_i];
 	        }
 	        var constructor$ = params[0];
-	        if (BASETYPE.some(function (TYPE) { return TYPE === Reflect.get(constructor$, 'name'); })) {
-	            throw new Error("the param of class[" + Reflect.getMetadata("saber_visited" /* VISITED */, MetaStore) + "]'s constructor has invalid type: " + constructor$.name);
+	        if (Class.isStatic(constructor$)) {
+	            return constructor$;
 	        }
-	        else {
-	            Reflect.defineMetadata("saber_visited" /* VISITED */, constructor$.name, MetaStore);
-	        }
+	        TypeCheck(constructor$);
 	        return origin.apply(constructor, params);
 	    });
 	    return origin;
@@ -1299,9 +1333,6 @@ var test = (function () {
 	         */
 	        Factory.create = function (constructor) {
 	            var _this = this;
-	            if (Class.isStatic(constructor)) {
-	                return constructor;
-	            }
 	            var depKeys = Reflect.getMetadataKeys(constructor)
 	                .filter(function (key) { return key.indexOf("saber_meta" /* META */) !== -1; })
 	                .reverse();
