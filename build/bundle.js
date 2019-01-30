@@ -1144,12 +1144,21 @@ var test = (function () {
 	})(Reflect$1 || (Reflect$1 = {}));
 
 	var saberIoc = createCommonjsModule(function (module, exports) {
+	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
+	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	    return c > 3 && r && Object.defineProperty(target, key, r), r;
+	};
+	var __metadata = (commonjsGlobal && commonjsGlobal.__metadata) || function (k, v) {
+	    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 	/*
-	 * @Author: AK-12
+	 * @Author: saber2pr
 	 * @Date: 2019-01-24 07:11:58
 	 * @Last Modified by: saber2pr
-	 * @Last Modified time: 2019-01-29 18:44:39
+	 * @Last Modified time: 2019-01-29 21:08:45
 	 */
 
 	/**
@@ -1158,27 +1167,15 @@ var test = (function () {
 	 */
 	var MetaStore = {};
 	/**
-	 * # META
-	 * `meta token`
+	 * # BASETYPE
 	 */
-	var META = 'saber_meta';
-	/**
-	 * # MAIN
-	 * `main class tag`
-	 */
-	var MAIN = 'saber_main';
-	/**
-	 * # CLASSTYPE
-	 */
-	var CLASSTYPE = {
-	    STATIC: 'saber_singleton'
-	};
+	var BASETYPE = ["Number" /* NUMBER */, "String" /* SRTING */, "Boolean" /* BOOLEAN */, "undefined" /* VOID */, "Array" /* ARRAY */];
 	/**
 	 * # MetaKey
 	 * return a META key.
 	 * @param id
 	 */
-	var MetaKey = function (id) { return META + ":" + id; };
+	var MetaKey = function (id) { return "saber_meta" /* META */ + ":" + id; };
 	/**
 	 * # Injectable
 	 * register the target to metaStore by id.
@@ -1219,7 +1216,7 @@ var test = (function () {
 	 * @param {Constructor<T>} target
 	 */
 	function Bootstrap(target) {
-	    Reflect.defineMetadata(MAIN, undefined, target);
+	    Reflect.defineMetadata("saber_main" /* MAIN */, undefined, target);
 	}
 	exports.Bootstrap = Bootstrap;
 	/**
@@ -1230,7 +1227,7 @@ var test = (function () {
 	 * @param {*} target
 	 */
 	function Singleton(target) {
-	    Reflect.defineMetadata(CLASSTYPE.STATIC, undefined, target);
+	    Reflect.defineMetadata("saber_singleton" /* STATIC */, undefined, target);
 	}
 	exports.Singleton = Singleton;
 	/**
@@ -1241,7 +1238,7 @@ var test = (function () {
 	 * @param {*} target
 	 */
 	function Static(target) {
-	    Reflect.defineMetadata(CLASSTYPE.STATIC, undefined, target);
+	    Reflect.defineMetadata("saber_singleton" /* STATIC */, undefined, target);
 	}
 	exports.Static = Static;
 	/**
@@ -1249,53 +1246,105 @@ var test = (function () {
 	 */
 	var Class;
 	(function (Class) {
-	    Class.isSingleton = function (target) {
-	        return Reflect.hasMetadata(CLASSTYPE.STATIC, target);
+	    Class.isStatic = function (target) {
+	        return Reflect.hasMetadata("saber_singleton" /* STATIC */, target);
 	    };
 	})(Class || (Class = {}));
 	/**
-	 * # SaFactory
+	 * ParamCheck
+	 *
+	 * @param {Constructor} constructor
+	 * @param {string} methodName
+	 * @returns
+	 */
+	function ParamCheck(constructor, methodName) {
+	    var origin = Reflect.get(constructor, methodName);
+	    Reflect.set(constructor, methodName, function () {
+	        var params = [];
+	        for (var _i = 0; _i < arguments.length; _i++) {
+	            params[_i] = arguments[_i];
+	        }
+	        var constructor$ = params[0];
+	        if (BASETYPE.some(function (TYPE) { return TYPE === Reflect.get(constructor$, 'name'); })) {
+	            throw new Error("the param of class[" + Reflect.getMetadata("saber_visited" /* VISITED */, MetaStore) + "]'s constructor has invalid type: " + constructor$.name);
+	        }
+	        else {
+	            Reflect.defineMetadata("saber_visited" /* VISITED */, constructor$.name, MetaStore);
+	        }
+	        return origin.apply(constructor, params);
+	    });
+	    return origin;
+	}
+	/**
+	 * # SaIOC
 	 * ## A simple ioc container for classes
 	 * 1. ensure `tsconfig.json` : `"emitDecoratorMetadata": true`.
 	 * 2. ensure `tsconfig.json` : `"experimentalDecorators": true`.
 	 * @exports
 	 */
-	var SaFactory;
-	(function (SaFactory) {
+	var SaIOC;
+	(function (SaIOC) {
 	    /**
-	     * create
-	     *
-	     * @template T
-	     * @param {Constructor<T>} constructor
-	     * @returns {T}
+	     * # Factory
 	     */
-	    function create(constructor) {
-	        if (Class.isSingleton(constructor)) {
-	            return constructor;
+	    var Factory = /** @class */ (function () {
+	        function Factory() {
 	        }
-	        var depKeys = Reflect.getMetadataKeys(constructor).filter(function (key) { return key.indexOf(META) !== -1; });
-	        var dependencies = depKeys.map(function (key) {
-	            if (Reflect.hasMetadata(key, MetaStore)) {
-	                return Reflect.getMetadata(key, MetaStore);
+	        /**
+	         * create
+	         *
+	         * @template T
+	         * @param {Constructor<T>} constructor
+	         * @returns {T}
+	         */
+	        Factory.create = function (constructor) {
+	            var _this = this;
+	            if (Class.isStatic(constructor)) {
+	                return constructor;
 	            }
-	            else {
-	                throw new Error("cannot found " + key.replace(META, 'dependence') + " in container.");
+	            var depKeys = Reflect.getMetadataKeys(constructor)
+	                .filter(function (key) { return key.indexOf("saber_meta" /* META */) !== -1; })
+	                .reverse();
+	            var dependenciesMeta = depKeys.map(function (key) {
+	                if (Reflect.hasMetadata(key, MetaStore)) {
+	                    return Reflect.getMetadata(key, MetaStore);
+	                }
+	                else {
+	                    throw new Error("cannot found " + key.replace("saber_meta" /* META */, 'dependence') + " in container.");
+	                }
+	            });
+	            if (Reflect.hasMetadata("design:paramtypes" /* PARAMTYPES */, constructor)) {
+	                (Reflect.getMetadata("design:paramtypes" /* PARAMTYPES */, constructor)).forEach(function (value, index) {
+	                    if (Reflect.get(value, 'name') !== 'Object') {
+	                        dependenciesMeta.splice(index, 0, value);
+	                    }
+	                });
 	            }
-	        });
-	        var depInstances = dependencies.map(function (dependence) { return create(dependence); });
-	        return new (constructor.bind.apply(constructor, [void 0].concat(depInstances.reverse())))();
-	    }
+	            var depInstances = dependenciesMeta.map(function (dependence) {
+	                return _this.create(dependence);
+	            });
+	            return new (constructor.bind.apply(constructor, [void 0].concat(depInstances)))();
+	        };
+	        var _a;
+	        __decorate([
+	            ParamCheck,
+	            __metadata("design:type", Function),
+	            __metadata("design:paramtypes", [Object]),
+	            __metadata("design:returntype", typeof (_a = typeof T !== "undefined" && T) === "function" ? _a : Object)
+	        ], Factory, "create", null);
+	        return Factory;
+	    }());
+	    SaIOC.Factory = Factory;
 	    function BootStrap(constructor, mainMethod) {
-	        var props = Object.keys(constructor.prototype);
-	        var main = create(constructor);
-	        if (props.some(function (value) { return value === 'main'; })) {
-	            main['main']();
+	        var main = Factory.create(constructor);
+	        if (Reflect.has(constructor.prototype, "main" /* BOOT */)) {
+	            Reflect.get(constructor.prototype, "main" /* BOOT */).apply(main);
 	        }
 	        else {
-	            main[mainMethod || props[0]]();
+	            (Reflect.get(constructor.prototype, mainMethod || Reflect.ownKeys(constructor.prototype)[1])).apply(main);
 	        }
 	    }
-	    SaFactory.BootStrap = BootStrap;
+	    SaIOC.BootStrap = BootStrap;
 	    /**
 	     * @export
 	     * @class Container
@@ -1314,7 +1363,7 @@ var test = (function () {
 	            }
 	            this.main =
 	                Constructors.find(function (constructor) {
-	                    return Reflect.hasMetadata(MAIN, constructor);
+	                    return Reflect.hasMetadata("saber_main" /* MAIN */, constructor);
 	                }) || Constructors[0];
 	        }
 	        /**
@@ -1326,15 +1375,15 @@ var test = (function () {
 	         * @memberof Container
 	         */
 	        Container.prototype.pull = function () {
-	            return create(this.main);
+	            return Factory.create(this.main);
 	        };
 	        Container.prototype.run = function (Constructor) {
-	            SaFactory.BootStrap(Constructor || this.main);
+	            BootStrap(Constructor || this.main);
 	        };
 	        return Container;
 	    }());
-	    SaFactory.Container = Container;
-	})(SaFactory = exports.SaFactory || (exports.SaFactory = {}));
+	    SaIOC.Container = Container;
+	})(SaIOC = exports.SaIOC || (exports.SaIOC = {}));
 	});
 
 	unwrapExports(saberIoc);
@@ -1343,7 +1392,7 @@ var test = (function () {
 	var saberIoc_3 = saberIoc.Bootstrap;
 	var saberIoc_4 = saberIoc.Singleton;
 	var saberIoc_5 = saberIoc.Static;
-	var saberIoc_6 = saberIoc.SaFactory;
+	var saberIoc_6 = saberIoc.SaIOC;
 
 	var lib = createCommonjsModule(function (module, exports) {
 	function __export(m) {
@@ -2431,8 +2480,8 @@ var test = (function () {
 	        if (offset === void 0) { offset = 100; }
 	        if (delta === void 0) { delta = 200; }
 	        this.offset = offset;
-	        this._lock = 0;
 	        this.delta = delta;
+	        this._lock = 0;
 	    }
 	    TouchFront.prototype.subscribe = function (callbackLeft, callbackRight, callbackUp, callbackDown) {
 	        this.callbackLeft = callbackLeft;
@@ -2497,7 +2546,7 @@ var test = (function () {
 	    };
 	    TouchFront = __decorate([
 	        lib.Injectable(),
-	        __metadata("design:paramtypes", [Number, Number])
+	        __metadata("design:paramtypes", [Object, Object])
 	    ], TouchFront);
 	    return TouchFront;
 	}());
@@ -2604,7 +2653,7 @@ var test = (function () {
 
 
 
-	new lib.SaFactory.Container(Layout_1.Layout, Factory_1.Factory, Application_1.Application, Matrix_1.Matrix, TouchFront_1.TouchFront, Canvas_1.Canvas, Block_1.Block).run();
+	new lib.SaIOC.Container(Layout_1.Layout, Factory_1.Factory, Application_1.Application, Matrix_1.Matrix, TouchFront_1.TouchFront, Canvas_1.Canvas, Block_1.Block).run();
 	});
 
 	var main$1 = unwrapExports(main);

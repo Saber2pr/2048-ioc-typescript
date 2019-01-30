@@ -7,8 +7,6 @@ interface Point {
 
 @Injectable()
 export class TouchFront implements ITouchFront {
-  private offset: number
-  private delta: number
   private _lock: number
 
   private callbackLeft: Function
@@ -19,10 +17,8 @@ export class TouchFront implements ITouchFront {
   private callbackUpdate: Function
   private callbackStop: Function
 
-  constructor(offset: number = 100, delta: number = 200) {
-    this.offset = offset
+  constructor(private offset = 100, private delta = 200) {
     this._lock = 0
-    this.delta = delta
   }
 
   public subscribe(
