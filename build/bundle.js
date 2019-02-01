@@ -1435,6 +1435,213 @@ var test = (function () {
 
 	unwrapExports(lib);
 
+	var saberDom = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	/**
+	 * TouchFront
+	 *
+	 * @export
+	 * @class TouchFront
+	 */
+	var TouchFront = /** @class */ (function () {
+	    /**
+	     *Creates an instance of TouchFront.
+	     * @param {FrontListener} [callbackLeft]
+	     * @param {FrontListener} [callbackRight]
+	     * @param {FrontListener} [callbackUp]
+	     * @param {FrontListener} [callbackDown]
+	     * @memberof TouchFront
+	     */
+	    function TouchFront(callbackLeft, callbackRight, callbackUp, callbackDown) {
+	        this.callbackLeft = callbackLeft;
+	        this.callbackRight = callbackRight;
+	        this.callbackUp = callbackUp;
+	        this.callbackDown = callbackDown;
+	        this.offset = 100;
+	        this.delta = 200;
+	    }
+	    /**
+	     * onLeft
+	     *
+	     * @param {FrontListener} callbackLeft
+	     * @returns {this}
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.onLeft = function (callbackLeft) {
+	        this.callbackLeft = callbackLeft;
+	        return this;
+	    };
+	    /**
+	     * onRight
+	     *
+	     * @param {FrontListener} callbackRight
+	     * @returns {this}
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.onRight = function (callbackRight) {
+	        this.callbackRight = callbackRight;
+	        return this;
+	    };
+	    /**
+	     * onUp
+	     *
+	     * @param {FrontListener} callbackUp
+	     * @returns {this}
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.onUp = function (callbackUp) {
+	        this.callbackUp = callbackUp;
+	        return this;
+	    };
+	    /**
+	     * onDown
+	     *
+	     * @param {FrontListener} callbackDown
+	     * @returns {this}
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.onDown = function (callbackDown) {
+	        this.callbackDown = callbackDown;
+	        return this;
+	    };
+	    /**
+	     * setProps
+	     *
+	     * @param {number} [offset=100]
+	     * @param {number} [delta=200]
+	     * @returns {this}
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.setProps = function (offset, delta) {
+	        if (offset === void 0) { offset = 100; }
+	        if (delta === void 0) { delta = 200; }
+	        this.offset = offset;
+	        this.delta = delta;
+	        return this;
+	    };
+	    /**
+	     * onStart
+	     *
+	     * @param {Function} callback
+	     * @returns
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.onStart = function (callback) {
+	        this.callbackStart = callback;
+	        return this;
+	    };
+	    /**
+	     * onUpdate
+	     *
+	     * @param {FrontListener} callback
+	     * @returns {this}
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.onUpdate = function (callback) {
+	        this.callbackUpdate = callback;
+	        return this;
+	    };
+	    /**
+	     * onStop
+	     *
+	     * @param {FrontListener} callback
+	     * @returns {this}
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.onStop = function (callback) {
+	        this.callbackStop = callback;
+	        return this;
+	    };
+	    /**
+	     * listen
+	     *
+	     * @param {HTMLElement} [elememt=document.body]
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.listen = function (elememt) {
+	        var _this = this;
+	        if (elememt === void 0) { elememt = document.body; }
+	        var originPos;
+	        var lock = 0;
+	        var state;
+	        elememt.addEventListener('mouseenter', function () {
+	            state = 'enter';
+	        });
+	        elememt.addEventListener('mousedown', function (event) {
+	            originPos = event;
+	            state = 'enter';
+	            if (state === 'enter') {
+	                !!_this.callbackStart ? _this.callbackStart(event) : null;
+	            }
+	        });
+	        elememt.addEventListener('mousemove', function (event) {
+	            lock++;
+	            if (state === 'enter' && Boolean(originPos)) {
+	                !!_this.callbackUpdate ? _this.callbackUpdate(event) : null;
+	            }
+	        });
+	        elememt.addEventListener('mouseup', function (event) {
+	            lock < _this.delta ? _this.testPos(originPos, event, event) : null;
+	            lock = 0;
+	            if (state === 'enter') {
+	                !!_this.callbackStop ? _this.callbackStop(event) : null;
+	            }
+	            state = null;
+	            originPos = null;
+	        });
+	        elememt.addEventListener('mouseout', function () {
+	            state = null;
+	        });
+	    };
+	    /**
+	     * testPos
+	     *
+	     * @private
+	     * @param {Point} originPos
+	     * @param {Point} touchPos
+	     * @param {MouseEvent} event
+	     * @memberof TouchFront
+	     */
+	    TouchFront.prototype.testPos = function (originPos, touchPos, event) {
+	        if (Math.abs(touchPos.x - originPos.x) < this.offset &&
+	            Math.abs(touchPos.y - originPos.y) < this.offset) {
+	            return;
+	        }
+	        if (Math.abs(touchPos.x - originPos.x) > Math.abs(touchPos.y - originPos.y)) {
+	            if (touchPos.x - originPos.x > this.offset) {
+	                !!this.callbackRight ? this.callbackRight(event) : null;
+	            }
+	            else if (touchPos.x - originPos.x < -this.offset) {
+	                !!this.callbackLeft ? this.callbackLeft(event) : null;
+	            }
+	        }
+	        else {
+	            if (touchPos.y - originPos.y > this.offset) {
+	                !!this.callbackDown ? this.callbackDown(event) : null;
+	            }
+	            else if (touchPos.y - originPos.y < -this.offset) {
+	                !!this.callbackUp ? this.callbackUp(event) : null;
+	            }
+	        }
+	    };
+	    return TouchFront;
+	}());
+	exports.TouchFront = TouchFront;
+	});
+
+	unwrapExports(saberDom);
+	var saberDom_1 = saberDom.TouchFront;
+
+	var lib$1 = createCommonjsModule(function (module, exports) {
+	function __export(m) {
+	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__export(saberDom);
+	});
+
+	unwrapExports(lib$1);
+
 	var Application_1 = createCommonjsModule(function (module, exports) {
 	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
 	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -1450,6 +1657,7 @@ var test = (function () {
 	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 
+
 	var Application = /** @class */ (function () {
 	    function Application(Layout, Matrix, TouchFront) {
 	        this.Layout = Layout;
@@ -1462,16 +1670,21 @@ var test = (function () {
 	            .init(4)
 	            .addRand(2);
 	        this.Layout.draw(this.Matrix.getInstance().merge('left'));
-	        this.TouchFront.subscribe(function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('left')); }, function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('right')); }, function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('up')); }, function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('down')); })
+	        this.TouchFront.onLeft(function () {
+	            return _this.Layout.draw(_this.Matrix.getInstance().merge('left'));
+	        })
+	            .onRight(function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('right')); })
+	            .onUp(function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('up')); })
+	            .onDown(function () { return _this.Layout.draw(_this.Matrix.getInstance().merge('down')); })
 	            .onStop(function () { return _this.Matrix.getInstance().addRand(2); })
-	            .listen();
+	            .listen(document.body);
 	    };
 	    Application = __decorate([
 	        lib.Bootstrap,
 	        __param(0, lib.Inject('Layout')),
 	        __param(1, lib.Inject('Matrix')),
 	        __param(2, lib.Inject('TouchFront')),
-	        __metadata("design:paramtypes", [Object, Object, Object])
+	        __metadata("design:paramtypes", [Object, Object, lib$1.TouchFront])
 	    ], Application);
 	    return Application;
 	}());
@@ -1639,7 +1852,7 @@ var test = (function () {
 	var Mat_7 = Mat_1.MatSet;
 	var Mat_8 = Mat_1.Mat;
 
-	var lib$1 = createCommonjsModule(function (module, exports) {
+	var lib$2 = createCommonjsModule(function (module, exports) {
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
@@ -1647,7 +1860,7 @@ var test = (function () {
 	__export(Mat_1);
 	});
 
-	unwrapExports(lib$1);
+	unwrapExports(lib$2);
 
 	var Layout_1 = createCommonjsModule(function (module, exports) {
 	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
@@ -1677,7 +1890,7 @@ var test = (function () {
 	    Layout.prototype.draw = function (mat) {
 	        var _this = this;
 	        this.Canvas.instance.clear();
-	        lib$1.Mat_foreach(mat, function (value, raw, col) {
+	        lib$2.Mat_foreach(mat, function (value, raw, col) {
 	            return value
 	                ? _this.Canvas.instance
 	                    .draw(_this.Factory.getNode().setPosition(col * _this.edge.dx, raw * _this.edge.dy))
@@ -2046,7 +2259,7 @@ var test = (function () {
 	var Rect_4 = Rect_1.Label;
 	var Rect_5 = Rect_1.Sprite;
 
-	var lib$2 = createCommonjsModule(function (module, exports) {
+	var lib$3 = createCommonjsModule(function (module, exports) {
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
@@ -2055,7 +2268,7 @@ var test = (function () {
 	__export(Rect_1);
 	});
 
-	unwrapExports(lib$2);
+	unwrapExports(lib$3);
 
 	var Observable_1 = createCommonjsModule(function (module, exports) {
 	var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -2228,7 +2441,7 @@ var test = (function () {
 	var Observable_3 = Observable_1.clone;
 	var Observable_4 = Observable_1.Observable;
 
-	var lib$3 = createCommonjsModule(function (module, exports) {
+	var lib$4 = createCommonjsModule(function (module, exports) {
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
@@ -2236,7 +2449,7 @@ var test = (function () {
 	__export(Observable_1);
 	});
 
-	unwrapExports(lib$3);
+	unwrapExports(lib$4);
 
 	var Factory_1 = createCommonjsModule(function (module, exports) {
 	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
@@ -2260,16 +2473,16 @@ var test = (function () {
 	        this.Block = Block;
 	    }
 	    Factory.prototype.getNode = function () {
-	        return new lib$2.Node(50, 50);
+	        return new lib$3.Node(50, 50);
 	    };
 	    Factory.prototype.getLabel = function (num) {
-	        return new lib$2.Label(String(num), 30);
+	        return new lib$3.Label(String(num), 30);
 	    };
 	    Factory.prototype.getBlock = function (num, x, y) {
 	        return this.Block.create().set(num, x, y);
 	    };
 	    Factory.prototype.getBlockObservable = function (num, x, y) {
-	        return new lib$3.Observable(this.getBlock(num, x, y));
+	        return new lib$4.Observable(this.getBlock(num, x, y));
 	    };
 	    Factory = __decorate([
 	        lib.Injectable(),
@@ -2376,7 +2589,7 @@ var test = (function () {
 	var saberInterval_2 = saberInterval.schedule;
 	var saberInterval_3 = saberInterval.scheduleOnce;
 
-	var lib$4 = createCommonjsModule(function (module, exports) {
+	var lib$5 = createCommonjsModule(function (module, exports) {
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
@@ -2384,7 +2597,7 @@ var test = (function () {
 	__export(saberInterval);
 	});
 
-	unwrapExports(lib$4);
+	unwrapExports(lib$5);
 
 	var Matrix_1 = createCommonjsModule(function (module, exports) {
 	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
@@ -2438,7 +2651,7 @@ var test = (function () {
 	        return this.instance;
 	    };
 	    Matrix.prototype.init = function (size) {
-	        this.mat = lib$1.MatFill(0, size);
+	        this.mat = lib$2.MatFill(0, size);
 	        return this;
 	    };
 	    Matrix.prototype.merge = function (method) {
@@ -2451,10 +2664,10 @@ var test = (function () {
 	                this.mat = this.mat.map(function (raw) { return _this.mergeRight(raw); });
 	                break;
 	            case 'up':
-	                this.mat = lib$1.MatTransform(lib$1.MatTransform(this.mat).map(function (raw) { return _this.mergeLeft(raw); }));
+	                this.mat = lib$2.MatTransform(lib$2.MatTransform(this.mat).map(function (raw) { return _this.mergeLeft(raw); }));
 	                break;
 	            case 'down':
-	                this.mat = lib$1.MatTransform(lib$1.MatTransform(this.mat).map(function (raw) { return _this.mergeRight(raw); }));
+	                this.mat = lib$2.MatTransform(lib$2.MatTransform(this.mat).map(function (raw) { return _this.mergeRight(raw); }));
 	                break;
 	        }
 	        return this.mat;
@@ -2463,8 +2676,8 @@ var test = (function () {
 	        var _this = this;
 	        if (times === void 0) { times = 1; }
 	        var points = [];
-	        lib$4.call(function () {
-	            lib$1.Mat_foreach(_this.mat, function (value, raw, col) {
+	        lib$5.call(function () {
+	            lib$2.Mat_foreach(_this.mat, function (value, raw, col) {
 	                if (value === 0) {
 	                    points.push({ x: raw, y: col });
 	                    _this.hasNext = true;
@@ -2472,7 +2685,7 @@ var test = (function () {
 	            });
 	            if (_this.hasNext) {
 	                var index = parseInt(String(Math.random() * points.length));
-	                lib$1.MatSet(_this.mat, 2, {
+	                lib$2.MatSet(_this.mat, 2, {
 	                    raw: points[index].x,
 	                    col: points[index].y
 	                });
@@ -2493,99 +2706,6 @@ var test = (function () {
 
 	unwrapExports(Matrix_1);
 	var Matrix_2 = Matrix_1.Matrix;
-
-	var TouchFront_1 = createCommonjsModule(function (module, exports) {
-	var __decorate = (commonjsGlobal && commonjsGlobal.__decorate) || function (decorators, target, key, desc) {
-	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-	    return c > 3 && r && Object.defineProperty(target, key, r), r;
-	};
-	var __metadata = (commonjsGlobal && commonjsGlobal.__metadata) || function (k, v) {
-	    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-	};
-	Object.defineProperty(exports, "__esModule", { value: true });
-
-	var TouchFront = /** @class */ (function () {
-	    function TouchFront(offset, delta) {
-	        if (offset === void 0) { offset = 100; }
-	        if (delta === void 0) { delta = 200; }
-	        this.offset = offset;
-	        this.delta = delta;
-	        this._lock = 0;
-	    }
-	    TouchFront.prototype.subscribe = function (callbackLeft, callbackRight, callbackUp, callbackDown) {
-	        this.callbackLeft = callbackLeft;
-	        this.callbackRight = callbackRight;
-	        this.callbackUp = callbackUp;
-	        this.callbackDown = callbackDown;
-	        return this;
-	    };
-	    TouchFront.prototype.onStart = function (callback) {
-	        this.callbackStart = callback;
-	        return this;
-	    };
-	    TouchFront.prototype.onUpdate = function (callback) {
-	        this.callbackUpdate = callback;
-	        return this;
-	    };
-	    TouchFront.prototype.onStop = function (callback) {
-	        this.callbackStop = callback;
-	        return this;
-	    };
-	    TouchFront.prototype.listen = function () {
-	        var _this = this;
-	        var originPos;
-	        document.addEventListener('mousedown', function (event) {
-	            originPos = event;
-	            !!_this.callbackStart ? _this.callbackStart() : null;
-	        });
-	        document.addEventListener('mousemove', function () {
-	            _this._lock++;
-	            if (originPos) {
-	                !!_this.callbackUpdate ? _this.callbackUpdate() : null;
-	            }
-	        });
-	        document.addEventListener('mouseup', function (event) {
-	            _this._lock < _this.delta ? _this.testPos(originPos, event) : null;
-	            _this._lock = 0;
-	            !!_this.callbackStop ? _this.callbackStop() : null;
-	            originPos = null;
-	        });
-	    };
-	    TouchFront.prototype.testPos = function (originPos, touchPos) {
-	        if (Math.abs(touchPos.x - originPos.x) < this.offset &&
-	            Math.abs(touchPos.y - originPos.y) < this.offset) {
-	            return;
-	        }
-	        if (Math.abs(touchPos.x - originPos.x) > Math.abs(touchPos.y - originPos.y)) {
-	            if (touchPos.x - originPos.x > this.offset) {
-	                !!this.callbackRight ? this.callbackRight() : null;
-	            }
-	            else if (touchPos.x - originPos.x < -this.offset) {
-	                !!this.callbackLeft ? this.callbackLeft() : null;
-	            }
-	        }
-	        else {
-	            if (touchPos.y - originPos.y > this.offset) {
-	                !!this.callbackDown ? this.callbackDown() : null;
-	            }
-	            else if (touchPos.y - originPos.y < -this.offset) {
-	                !!this.callbackUp ? this.callbackUp() : null;
-	            }
-	        }
-	    };
-	    TouchFront = __decorate([
-	        lib.Injectable(),
-	        __metadata("design:paramtypes", [Object, Object])
-	    ], TouchFront);
-	    return TouchFront;
-	}());
-	exports.TouchFront = TouchFront;
-	});
-
-	unwrapExports(TouchFront_1);
-	var TouchFront_2 = TouchFront_1.TouchFront;
 
 	var Canvas_1 = createCommonjsModule(function (module, exports) {
 	var __extends = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
@@ -2627,7 +2747,7 @@ var test = (function () {
 	        __metadata("design:paramtypes", [])
 	    ], Canvas);
 	    return Canvas;
-	}(lib$2.Canvas));
+	}(lib$3.Canvas));
 	exports.Canvas = Canvas;
 	});
 
@@ -2649,8 +2769,8 @@ var test = (function () {
 
 	var Block = /** @class */ (function () {
 	    function Block() {
-	        this.node = new lib$2.Node(0, 0);
-	        this.label = new lib$2.Label('2', 30);
+	        this.node = new lib$3.Node(0, 0);
+	        this.label = new lib$3.Label('2', 30);
 	    }
 	    Block_1 = Block;
 	    Block.prototype.set = function (num, x, y) {
@@ -2684,7 +2804,8 @@ var test = (function () {
 
 
 
-	new lib.SaIOC.Container(Layout_1.Layout, Factory_1.Factory, Application_1.Application, Matrix_1.Matrix, TouchFront_1.TouchFront, Canvas_1.Canvas, Block_1.Block).run();
+	lib.Injectable()(lib$1.TouchFront);
+	new lib.SaIOC.Container(Layout_1.Layout, Factory_1.Factory, Application_1.Application, Matrix_1.Matrix, lib$1.TouchFront, Canvas_1.Canvas, Block_1.Block).run();
 	});
 
 	var main$1 = unwrapExports(main);

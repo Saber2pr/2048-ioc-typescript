@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "saber-canvas": "^1.0.9",
+    "saber-dom": "^1.0.7",
     "saber-interval": "^1.1.0",
     "saber-ioc": "^0.2.6",
     "saber-mat": "^1.0.3",

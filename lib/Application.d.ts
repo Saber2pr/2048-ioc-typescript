@@ -1,10 +1,10 @@
 import { ILayout } from './interface/ILayout';
 import { ISMatrix } from './interface/ISMatrix';
-import { ITouchFront } from './interface/ITouchFront';
+import { TouchFront } from 'saber-dom';
 export declare class Application {
     private Layout;
     private Matrix;
     private TouchFront;
-    constructor(Layout: ILayout, Matrix: ISMatrix, TouchFront: ITouchFront);
+    constructor(Layout: ILayout, Matrix: ISMatrix, TouchFront: TouchFront);
     main(): void;
 }
