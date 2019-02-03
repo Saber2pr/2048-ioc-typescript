@@ -22,7 +22,7 @@
     "saber-canvas": "^1.0.9",
     "saber-dom": "^1.0.7",
     "saber-interval": "^1.1.0",
-    "saber-ioc": "^0.2.6",
+    "saber-ioc": "^0.2.7",
     "saber-mat": "^1.0.3",
     "saber-observable": "^1.0.6"
   }

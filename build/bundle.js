@@ -1214,7 +1214,9 @@ var test = (function () {
 	 * @returns {ParameterDecorator}
 	 */
 	function Inject(id) {
-	    return function (target) { return Reflect.defineMetadata(MetaKey(id), undefined, target); };
+	    return function (target, key, index) {
+	        return Reflect.defineMetadata(MetaKey(id), index, target);
+	    };
 	}
 	exports.Inject = Inject;
 	/**
@@ -1333,24 +1335,25 @@ var test = (function () {
 	         */
 	        Factory.create = function (constructor) {
 	            var _this = this;
-	            var depKeys = Reflect.getMetadataKeys(constructor)
-	                .filter(function (key) { return key.indexOf("saber_meta" /* META */) !== -1; })
-	                .reverse();
-	            var dependenciesMeta = depKeys.map(function (key) {
+	            var dependenciesMeta = [];
+	            if (Reflect.hasMetadata("design:paramtypes" /* PARAMTYPES */, constructor)) {
+	                (Reflect.getMetadata("design:paramtypes" /* PARAMTYPES */, constructor)).forEach(function (value, index) {
+	                    if (Reflect.get(value, 'name') !== 'Object') {
+	                        dependenciesMeta[index] = value;
+	                    }
+	                });
+	            }
+	            var depKeys = Reflect.getMetadataKeys(constructor).filter(function (key) { return key.indexOf("saber_meta" /* META */) !== -1; });
+	            depKeys.forEach(function (key) {
 	                if (Reflect.hasMetadata(key, MetaStore)) {
-	                    return Reflect.getMetadata(key, MetaStore);
+	                    var index = Reflect.getMetadata(key, constructor);
+	                    var meta = Reflect.getMetadata(key, MetaStore);
+	                    dependenciesMeta[index] = meta;
 	                }
 	                else {
 	                    throw new Error("cannot found " + key.replace("saber_meta" /* META */, 'dependence') + " in container.");
 	                }
 	            });
-	            if (Reflect.hasMetadata("design:paramtypes" /* PARAMTYPES */, constructor)) {
-	                (Reflect.getMetadata("design:paramtypes" /* PARAMTYPES */, constructor)).forEach(function (value, index) {
-	                    if (Reflect.get(value, 'name') !== 'Object') {
-	                        dependenciesMeta.splice(index, 0, value);
-	                    }
-	                });
-	            }
 	            var depInstances = dependenciesMeta.map(function (dependence) {
 	                return _this.create(dependence);
 	            });
@@ -2805,7 +2808,7 @@ var test = (function () {
 
 
 	lib.Injectable()(lib$1.TouchFront);
-	new lib.SaIOC.Container(Layout_1.Layout, Factory_1.Factory, Application_1.Application, Matrix_1.Matrix, lib$1.TouchFront, Canvas_1.Canvas, Block_1.Block).run();
+	new lib.SaIOC.Container(Application_1.Application, Layout_1.Layout, Factory_1.Factory, Matrix_1.Matrix, lib$1.TouchFront, Canvas_1.Canvas, Block_1.Block).run();
 	});
 
 	var main$1 = unwrapExports(main);
